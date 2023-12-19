@@ -24,4 +24,7 @@ def logout_view(request):
     return redirect('http://127.0.0.1:8000/user/login')
 
 def home(request):
-    return render(request, 'home.html')
+    if request.user.is_authenticated == True:
+        return render(request, 'home.html')
+    else:
+        return 1

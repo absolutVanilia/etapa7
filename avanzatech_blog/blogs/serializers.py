@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from .models import Post
 
-class BlogSerializer(serializers.Model):
-    owner = serializers.ReadOnlyField(source='owner.username')
+
+class BlogSerializer(serializers.ModelSerializer):
+    owner = serializers.ReadOnlyField(source='blogs_post.owner_id')
 
     class Meta:
         model = Post
-        fields = ['id', 'created', 'modified', 'owner', 'title', 'content', 'status']
+        exclude = ('status',)
