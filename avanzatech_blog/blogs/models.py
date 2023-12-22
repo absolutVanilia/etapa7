@@ -34,3 +34,6 @@ class Like(models.Model):
     modified = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey('user.CustomUser', on_delete=models.CASCADE, related_name='likes')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+
+    class Meta:
+        unique_together = ('owner', 'post')

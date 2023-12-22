@@ -1,5 +1,6 @@
 from rest_framework import permissions
 class IsOwnerOrIsAdminPermission(permissions.BasePermission):
+    
     def has_permission(self, request, view):
         print(int(bool(request.user.is_staff)))
         return bool(request.user.is_staff or request.user.is_authenticated)
