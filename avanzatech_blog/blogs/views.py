@@ -91,3 +91,5 @@ class LikeList(ReadQuerySet, generics.ListAPIView):
             queryset = queryset.filter(user=user)
         return queryset
     
+
+    
