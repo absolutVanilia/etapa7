@@ -24,10 +24,29 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
+    """
+    A custom user model in Django that extends the AbstractBaseUser and PermissionsMixin classes.
+    
+    Attributes:
+        email (EmailField): The email address of the user (unique identifier).
+        is_staff (BooleanField): Indicates whether the user is a staff member.
+        is_active (BooleanField): Indicates whether the user is active.
+        team (IntegerField): The team number of the user.
+        date_joined (DateTimeField): The date and time the user joined.
+        last_login (DateTimeField): The date and time of the user's last login.
+        
+    Methods:
+        create_user(email, password=None, **extra_fields): Creates a new user with the given email and password.
+        create_superuser(email, password=None, **extra_fields): Creates a new superuser with the given email and password.
+    """
+    
     email = models.EmailField(_('email address'), unique=True)
     is_staff = models.BooleanField(_('staff status'), default=False)
     is_active = models.BooleanField(_('active'), default=True)
     team = models.IntegerField(_('team number'), default=1)
+    date_joined = models.DateTimeField(_('date joined'), auto_now_add=True)
+    last_login = models.DateTimeField(_('last login'), auto_now=True)
+    
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'email'
@@ -35,6 +54,3 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-
-
-
