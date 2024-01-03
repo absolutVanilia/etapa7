@@ -16,15 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from blogs.views import CreateBlogPost, UpdateBlogPost, DeleteBlogPost, RetrieveSpecificBlogPost, LikeCreateDestroy
+from blogs.views import CreateBlogPost, UpdateBlogPost, DeleteBlogPost, RetrieveSpecificBlogPost, LikeUnlike, LikeList, CreateCommentDeleteComment, CommentList
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('user/', include('user.urls')),
-    path('post/', CreateBlogPost.as_view()),
+    path('post/', CreateBlogPost.as_view(), name='create-blog-post'),
     path('post/<int:pk>', RetrieveSpecificBlogPost.as_view()),
-    path('blog/<int:pk>', UpdateBlogPost.as_view()),
+    path('blog/<int:pk>', UpdateBlogPost.as_view(), name='update-blog-post'),
     path('delete/<int:pk>', DeleteBlogPost.as_view()),
-    path('like/<int:pk>', LikeCreateDestroy.as_view()), 
-
+    path('like/<int:pk>', LikeUnlike.as_view()),
+    path('likeslist/', LikeList.as_view()),
+    path('comment/<int:pk>', CreateCommentDeleteComment.as_view()),
+    path('comment/list/', CommentList.as_view()),
 ]

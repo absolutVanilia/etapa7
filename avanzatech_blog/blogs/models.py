@@ -21,11 +21,11 @@ class Post(models.Model):
     content = models.TextField(blank=False, null=False)
     reading_permission = models.CharField(max_length=15, choices=VISIBILITY_CHOICES, default='public')
     writing_permission = models.CharField(max_length=15, choices=VISIBILITY_CHOICES, default='owner')
-    status = models.BooleanField(default=1)
 
 class Comment(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+    content = models.TextField(blank=False, null=False)
     owner = models.ForeignKey('user.CustomUser', on_delete=models.CASCADE, related_name='comments')
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
 

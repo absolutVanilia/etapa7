@@ -1,12 +1,11 @@
-from django.shortcuts import render
-from .serializers import BlogSerializer, LikeSerializer
-from .models import Post, Like
+from .serializers import BlogSerializer, LikeSerializer, CommentSerializer
+from .models import Post, Like, Comment
 from rest_framework import generics, mixins, response, status
 from rest_framework.permissions import IsAuthenticated
-from .custom_permissions import IsOwnerOrIsAdminPermission
+from utils.custom_permissions import IsOwnerOrIsAdminPermission
 from utils.pagination import PostsResultsSetPagination, LikesResultsSetPagination
 from django.shortcuts import get_object_or_404
-from utils.queryset import ReadQuerySet
+from utils.queryset import ReadQuerySet, UpdateQuerySet, LikeQuerySet, CommentQuerySet
 from django.db.models import Q
 
 # Create your views here.
@@ -25,35 +24,38 @@ class CreateBlogPost(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-class RetrieveSpecificBlogPost(generics.RetrieveAPIView):
-
-    queryset = Post.objects.all()
+class RetrieveSpecificBlogPost(ReadQuerySet, generics.RetrieveAPIView):
+    '''
+    This class is associated with the /post/<int:pk> endpoint, 
+    it retrives a specific blog post based on the provided ID.
+    The queryset method is inherit from ReadQuerySet.
+    '''
     serializer_class = BlogSerializer
     permission_classes = [IsAuthenticated]
     
-class UpdateBlogPost(generics.UpdateAPIView):
+class UpdateBlogPost(UpdateQuerySet, generics.UpdateAPIView):
     '''
     This class is associated with the /blog/<int:pk> endpoint,
-    it allows Post owner and admins to update a post
+    it allows Post owner, users with updates permision, and admins to update a post
+    The queryset method is inherit from UpdateQuerySet.
+
     '''
-    queryset = Post.objects.all()
     serializer_class = BlogSerializer
     permission_classes = [IsOwnerOrIsAdminPermission]
 
-class DeleteBlogPost(generics.DestroyAPIView):
+class DeleteBlogPost(UpdateQuerySet,generics.DestroyAPIView):
     '''
-    This class is associated with the /blog/<int:pk> endpoint,
+    This class is associated with the /delete/<int:pk> endpoint,
     it allows Post owner and admins to delete a post
+    The queryset method is inherit from UpdateQuerySet.
     '''
-
-    queryset = Post.objects.all()
     serializer_class = BlogSerializer
     permission_classes = [IsOwnerOrIsAdminPermission]
 
-class CreateLikeDeleteLike(ReadQuerySet, generics.GenericAPIView, mixins.CreateModelMixin, mixins.DestroyModelMixin):
+class LikeUnlike(ReadQuerySet, generics.GenericAPIView, mixins.CreateModelMixin, mixins.DestroyModelMixin):
     serializer_class = LikeSerializer
     lookup_field = 'pk'
-    permission_classes = [IsOwnerOrIsAdminPermission]
+    permission_classes = [IsAuthenticated]
     
     def get_post_object(self, pk):
         return get_object_or_404(self.get_queryset(), pk=pk)
@@ -71,25 +73,32 @@ class CreateLikeDeleteLike(ReadQuerySet, generics.GenericAPIView, mixins.CreateM
         like.delete()
         return response.Response(status=status.HTTP_204_NO_CONTENT)
     
-class LikeList(ReadQuerySet, generics.ListAPIView):
+class LikeList(LikeQuerySet, generics.ListAPIView):
     serializer_class = LikeSerializer
     pagination_class = LikesResultsSetPagination
-    
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        if self.request.user.role == 'admin':
-            queryset = Like.objects.all()
-        else:        
-            queryset = Like.objects.filter(Q(post__read_permission='public') | Q(post__read_permission='authenticated')
-                                       | Q(post__author=self.request.user) | Q(post__author__team=self.request.user.team) & Q(post__is_active=True))
+class CreateCommentDeleteComment(LikeUnlike, ReadQuerySet, generics.GenericAPIView, mixins.CreateModelMixin, mixins.DestroyModelMixin,):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'pk'
+
+    def post(self, request, pk):
+        post = self.get_post_object(pk)
+        comment = Comment.objects.create(owner=request.user, post=post, content=request.data['content'])
+        return response.Response(self.get_serializer(comment).data, status=status.HTTP_201_CREATED)
         
-        post = self.request.query_params.get('post', None)
-        user = self.request.query_params.get('user', None)
-        if post is not None:
-            queryset = queryset.filter(post=post)
-        if user is not None:
-            queryset = queryset.filter(user=user)
-        return queryset
-    
+    def delete(self, request, pk):
+        post = self.get_post_object(pk)
+        comment = Comment.objects.filter(owner=request.user, post=post).first()
+        comment.delete()
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CommentList(CommentQuerySet, generics.ListAPIView):
+    serializer_class = CommentSerializer
+    pagination_class = PostsResultsSetPagination
+    permission_classes = [IsOwnerOrIsAdminPermission]
+
 
     
